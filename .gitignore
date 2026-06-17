@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+
+# Database
+*.db
+
+# Photos (runtime data)
+photos/*.jpg
+photos/*.png
+photos/*.jpeg
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Claude
+.claude/
+
+# Archive
+*.tar.gz
+
+# Misc
+*.local
+*.suo
+*.sw?
