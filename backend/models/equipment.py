@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -11,14 +11,17 @@ class FieldConfig(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     field_name = Column(String(50), nullable=False)
     field_label = Column(String(100), nullable=False)
-    field_type = Column(String(20), nullable=False)  # text, number, date, select, multi_select, image
+    field_type = Column(String(20), nullable=False)  # text, number, date, select, multi_select, image, video
     is_required = Column(String(10), default="optional")  # always, dynamic, optional
     options = Column(JSON)  # 下拉选项列表
     max_length = Column(Integer)
     regex_pattern = Column(String(255))
-    min_value = Column(Integer)
-    max_value = Column(Integer)
-    decimal_places = Column(Integer)
+    regex_hint = Column(String(255))  # 正则校验失败提示
+    min_value = Column(Float)  # 数值下限 (支持小数)
+    max_value = Column(Float)  # 数值上限 (支持小数)
+    decimal_places = Column(Integer)  # 小数位精度
+    date_format = Column(String(20))  # date(年月日), month(年月)
+    default_value = Column(JSON)  # 默认值 (支持 "today" 等特殊值)
     sort_order = Column(Integer, default=0)
     is_active = Column(String(10), default="active")  # active, disabled
     parent_field_id = Column(Integer, ForeignKey("field_configs.id"), nullable=True)  # 级联父字段

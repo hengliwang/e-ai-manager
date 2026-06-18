@@ -11,7 +11,35 @@ class FieldConfigCreate(BaseModel):
     options: Optional[list] = None
     max_length: Optional[int] = None
     regex_pattern: Optional[str] = None
+    regex_hint: Optional[str] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    decimal_places: Optional[int] = None
+    date_format: Optional[str] = None
+    default_value: Optional[Any] = None
     sort_order: int = 0
+    parent_field_id: Optional[int] = None
+    visibility_rules: Optional[list] = None
+    required_rules: Optional[list] = None
+    cascade_rules: Optional[list] = None
+
+
+class FieldConfigUpdate(BaseModel):
+    field_name: Optional[str] = None
+    field_label: Optional[str] = None
+    field_type: Optional[str] = None
+    is_required: Optional[str] = None
+    options: Optional[list] = None
+    max_length: Optional[int] = None
+    regex_pattern: Optional[str] = None
+    regex_hint: Optional[str] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    decimal_places: Optional[int] = None
+    date_format: Optional[str] = None
+    default_value: Optional[Any] = None
+    sort_order: Optional[int] = None
+    is_active: Optional[str] = None
     parent_field_id: Optional[int] = None
     visibility_rules: Optional[list] = None
     required_rules: Optional[list] = None
@@ -26,6 +54,13 @@ class FieldConfigResponse(BaseModel):
     is_required: str
     options: Optional[list] = None
     max_length: Optional[int] = None
+    regex_pattern: Optional[str] = None
+    regex_hint: Optional[str] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    decimal_places: Optional[int] = None
+    date_format: Optional[str] = None
+    default_value: Optional[Any] = None
     sort_order: int
     is_active: str
     parent_field_id: Optional[int] = None
@@ -35,6 +70,20 @@ class FieldConfigResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OptionItem(BaseModel):
+    """选项管理"""
+    label: str
+    value: str
+    active: bool = True
+
+
+class OptionManageRequest(BaseModel):
+    """选项增删改请求"""
+    action: str  # add, update, remove, toggle
+    option: Optional[OptionItem] = None
+    old_value: Optional[str] = None  # for update/remove, the value to find
 
 
 class EquipmentCreate(BaseModel):

@@ -28,45 +28,128 @@ def init_db():
     db.flush()
 
     # ===== 字段配置 =====
+    # 选项统一用 dict 格式: {"label": "显示名", "value": "值", "active": true}
     field_configs = [
+        # 1. 设备大类 - 单选下拉框
         FieldConfig(field_name="category", field_label="设备大类", field_type="select", is_required="always",
-                    options=["土建类", "电器类"], sort_order=1),
+                    options=[
+                        {"label": "土建类", "value": "土建类", "active": True},
+                        {"label": "电器类", "value": "电器类", "active": True},
+                    ], sort_order=1),
+        # 2. 设备类型 - 单选下拉框 + 级联联动
         FieldConfig(field_name="equipment_type", field_label="设备类型", field_type="select", is_required="always",
-                    options=["电线杆", "电缆井", "变电所", "变电站", "开关柜", "变压器", "架空线路", "断路器"],
-                    parent_field_id=None, cascade_rules=[{"field": "category", "mapping": {"土建类": ["电线杆", "电缆井", "站房", "沟道"], "电器类": ["变压器", "开关柜", "架空线路", "断路器"]}}],
+                    options=[
+                        {"label": "电线杆", "value": "电线杆", "active": True},
+                        {"label": "电缆井", "value": "电缆井", "active": True},
+                        {"label": "站房", "value": "站房", "active": True},
+                        {"label": "沟道", "value": "沟道", "active": True},
+                        {"label": "变压器", "value": "变压器", "active": True},
+                        {"label": "开关柜", "value": "开关柜", "active": True},
+                        {"label": "架空线路", "value": "架空线路", "active": True},
+                        {"label": "断路器", "value": "断路器", "active": True},
+                    ],
+                    cascade_rules=[{"field": "category", "mapping": {
+                        "土建类": ["电线杆", "电缆井", "站房", "沟道"],
+                        "电器类": ["变压器", "开关柜", "架空线路", "断路器"],
+                    }}],
                     sort_order=2),
+        # 3. 设备名称 - 文本输入 + 最大字符限制
+        FieldConfig(field_name="equipment_name", field_label="设备名称", field_type="text", is_required="always",
+                    max_length=100, sort_order=3),
+        # 4. 资产编码 - 文本输入 + 正则校验 (动态必填)
         FieldConfig(field_name="asset_code", field_label="资产编码", field_type="text", is_required="dynamic",
-                    required_rules=[{"field": "category", "value": "电器类"}],
-                    visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}],
-                    sort_order=3),
-        FieldConfig(field_name="operation_date", field_label="投运日期", field_type="date", is_required="dynamic",
+                    max_length=50, regex_pattern=r"^[A-Z]+-[\d]+$",
+                    regex_hint="格式: 大写字母-数字, 如 SGCC-001",
                     required_rules=[{"field": "category", "value": "电器类"}],
                     visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}],
                     sort_order=4),
-        FieldConfig(field_name="manufacturer", field_label="厂家信息", field_type="text", is_required="dynamic",
+        # 5. 投运日期 - 日期选择 (年月日) + 默认当天
+        FieldConfig(field_name="operation_date", field_label="投运日期", field_type="date", is_required="dynamic",
+                    date_format="date", default_value="today",
                     required_rules=[{"field": "category", "value": "电器类"}],
                     visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}],
                     sort_order=5),
-        FieldConfig(field_name="equipment_name", field_label="设备名称", field_type="text", is_required="always",
+        # 6. 厂家信息 - 文本输入
+        FieldConfig(field_name="manufacturer", field_label="厂家信息", field_type="text", is_required="dynamic",
+                    max_length=100,
+                    required_rules=[{"field": "category", "value": "电器类"}],
+                    visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}],
                     sort_order=6),
+        # 7. 设备型号 - 文本输入
         FieldConfig(field_name="cabinet_model", field_label="柜型/型号", field_type="text", is_required="dynamic",
+                    max_length=100,
                     required_rules=[{"field": "equipment_type", "value": "开关柜", "operator": "contains"}],
                     visibility_rules=[{"field": "equipment_type", "value": "柜", "action": "show", "operator": "contains"}],
                     sort_order=7),
+        # 8. 出厂编号 - 文本输入
         FieldConfig(field_name="factory_number", field_label="设备出厂编号", field_type="text", is_required="dynamic",
+                    regex_pattern=r"^[A-Z]\d{6,}$", regex_hint="大写字母开头+6位以上数字，如 F2020001",
                     required_rules=[{"field": "equipment_type", "value": "柜,变压器", "operator": "contains_any"}],
                     visibility_rules=[{"field": "equipment_type", "value": "柜,变压器", "action": "show", "operator": "contains_any"}],
                     sort_order=8),
+        # 9. 线路名称 - 文本输入
         FieldConfig(field_name="line_name", field_label="线路名称", field_type="text", is_required="optional",
+                    max_length=100,
                     visibility_rules=[{"field": "equipment_type", "value": "电线杆,架空线路", "action": "show", "operator": "in"}],
                     sort_order=9),
+        # 10. 站所名称 - 文本输入
         FieldConfig(field_name="station_name", field_label="站所名称", field_type="text", is_required="optional",
-                    visibility_rules=[{"field": "equipment_type", "value": "变电所,变电站,开关柜", "action": "show", "operator": "in"}],
+                    max_length=100,
+                    visibility_rules=[{"field": "equipment_type", "value": "站房,开关柜", "action": "show", "operator": "in"}],
                     sort_order=10),
-        FieldConfig(field_name="province", field_label="省", field_type="text", is_required="always", sort_order=11),
-        FieldConfig(field_name="city", field_label="市", field_type="text", is_required="always", sort_order=12),
-        FieldConfig(field_name="district", field_label="区", field_type="text", is_required="always", sort_order=13),
-        FieldConfig(field_name="customer_name", field_label="所属客户", field_type="text", is_required="always", sort_order=14),
+        # 11. 电压等级 - 数值输入 (带上下限&精度)
+        FieldConfig(field_name="voltage_level", field_label="电压等级(kV)", field_type="number", is_required="optional",
+                    min_value=0.1, max_value=1000, decimal_places=2,
+                    visibility_rules=[{"field": "equipment_type", "value": "变压器,开关柜,架空线路,断路器", "action": "show", "operator": "in"}],
+                    sort_order=11),
+        # 12. 杆塔高度 - 数值输入
+        FieldConfig(field_name="tower_height", field_label="杆塔高度(m)", field_type="number", is_required="optional",
+                    min_value=0, max_value=200, decimal_places=1,
+                    visibility_rules=[{"field": "equipment_type", "value": "电线杆,架空线路", "action": "show", "operator": "in"}],
+                    sort_order=12),
+        # 13. 缺陷等级 - 多选下拉框
+        FieldConfig(field_name="defect_level", field_label="缺陷等级", field_type="multi_select", is_required="optional",
+                    options=[
+                        {"label": "一级", "value": "一级", "active": True},
+                        {"label": "二级", "value": "二级", "active": True},
+                        {"label": "三级", "value": "三级", "active": True},
+                        {"label": "四级", "value": "四级", "active": True},
+                    ], sort_order=13),
+        # 14. 所属客户 - 文本输入
+        FieldConfig(field_name="customer_name", field_label="所属客户", field_type="text", is_required="always",
+                    max_length=100, sort_order=14),
+        # 15. 现场实景 - 多媒体 (图片/视频)
+        FieldConfig(field_name="site_media", field_label="现场实景", field_type="video", is_required="optional",
+                    sort_order=15,
+                    visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}]),
+        # 16. 竣工日期 - 日期选择 (仅年月)
+        FieldConfig(field_name="completion_date", field_label="竣工日期", field_type="date", is_required="optional",
+                    date_format="month", sort_order=16),
+        # 17. 联系人手机 - 文本输入 + 正则校验
+        FieldConfig(field_name="contact_phone", field_label="联系人手机", field_type="text", is_required="optional",
+                    regex_pattern=r"^1[3-9]\d{9}$", regex_hint="请输入正确的11位手机号",
+                    max_length=11, sort_order=17),
+        # 18. 省 - 文本输入 (必填)
+        FieldConfig(field_name="province", field_label="省", field_type="text", is_required="always",
+                    max_length=50, sort_order=18),
+        # 19. 市 - 文本输入 (必填)
+        FieldConfig(field_name="city", field_label="市", field_type="text", is_required="always",
+                    max_length=50, sort_order=19),
+        # 20. 区 - 文本输入 (必填)
+        FieldConfig(field_name="district", field_label="区", field_type="text", is_required="always",
+                    max_length=50, sort_order=20),
+        # 21. 详细地址 - 文本输入
+        FieldConfig(field_name="address_detail", field_label="详细地址", field_type="text", is_required="optional",
+                    max_length=255, sort_order=21),
+        # 22. 经度 - 数值输入
+        FieldConfig(field_name="longitude", field_label="经度", field_type="number", is_required="optional",
+                    min_value=73, max_value=135, decimal_places=6, sort_order=22),
+        # 23. 纬度 - 数值输入
+        FieldConfig(field_name="latitude", field_label="纬度", field_type="number", is_required="optional",
+                    min_value=17, max_value=54, decimal_places=6, sort_order=23),
+        # 24. 备注 - 文本输入
+        FieldConfig(field_name="remark", field_label="备注", field_type="text", is_required="optional",
+                    max_length=500, sort_order=24),
     ]
     db.add_all(field_configs)
     db.flush()

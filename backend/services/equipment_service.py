@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models.equipment import Equipment, EquipmentPhoto, AuditLog, FieldConfig
-from schemas.equipment import EquipmentCreate, EquipmentUpdate
+from schemas.equipment import EquipmentCreate, EquipmentUpdate, FieldConfigCreate, FieldConfigUpdate
 
 
 def get_equipment_list(db: Session, skip: int = 0, limit: int = 20,
@@ -40,7 +40,6 @@ def update_equipment(db: Session, equipment_id: int, data: EquipmentUpdate, user
     equipment = db.query(Equipment).filter(Equipment.id == equipment_id).first()
     if not equipment:
         return None
-    # 记录变更日志
     for key, new_val in data.model_dump(exclude_unset=True).items():
         old_val = getattr(equipment, key)
         if str(old_val) != str(new_val):
@@ -66,13 +65,75 @@ def delete_equipment(db: Session, equipment_id: int):
     return equipment
 
 
-def get_field_configs(db: Session):
-    return db.query(FieldConfig).filter(FieldConfig.is_active == "active").order_by(FieldConfig.sort_order).all()
+# ===== 字段配置管理 =====
+
+def get_field_configs(db: Session, include_disabled: bool = False):
+    query = db.query(FieldConfig)
+    if not include_disabled:
+        query = query.filter(FieldConfig.is_active == "active")
+    return query.order_by(FieldConfig.sort_order).all()
 
 
-def create_field_config(db: Session, data):
+def get_field_config(db: Session, config_id: int):
+    return db.query(FieldConfig).filter(FieldConfig.id == config_id).first()
+
+
+def create_field_config(db: Session, data: FieldConfigCreate):
     config = FieldConfig(**data.model_dump())
     db.add(config)
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+def update_field_config(db: Session, config_id: int, data: FieldConfigUpdate):
+    config = db.query(FieldConfig).filter(FieldConfig.id == config_id).first()
+    if not config:
+        return None
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(config, key, value)
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+def delete_field_config(db: Session, config_id: int):
+    config = db.query(FieldConfig).filter(FieldConfig.id == config_id).first()
+    if config:
+        db.delete(config)
+        db.commit()
+    return config
+
+
+def manage_field_options(db: Session, config_id: int, action: str, option: dict = None, old_value: str = None):
+    """管理字段配置的选项列表: add, update, remove, toggle"""
+    config = db.query(FieldConfig).filter(FieldConfig.id == config_id).first()
+    if not config or config.options is None:
+        return None
+
+    options = config.options
+
+    if action == "add":
+        if option:
+            options.append(option)
+    elif action == "update":
+        if old_value and option:
+            for i, opt in enumerate(options):
+                opt_val = opt["value"] if isinstance(opt, dict) else opt
+                if opt_val == old_value:
+                    options[i] = option
+                    break
+    elif action == "remove":
+        if old_value:
+            options = [o for o in options if (o["value"] if isinstance(o, dict) else o) != old_value]
+    elif action == "toggle":
+        if old_value:
+            for opt in options:
+                if isinstance(opt, dict) and opt.get("value") == old_value:
+                    opt["active"] = not opt.get("active", True)
+                    break
+
+    config.options = options
     db.commit()
     db.refresh(config)
     return config

@@ -100,6 +100,7 @@ export default function EquipmentList() {
           <Space>
             <Button icon={<UploadOutlined />}>批量导入</Button>
             <Button icon={<ExportOutlined />}>导出Excel</Button>
+            <Button onClick={() => navigate('/equipment/field-configs')}>基础属性配置</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/equipment/new')}>
               新增设备
             </Button>

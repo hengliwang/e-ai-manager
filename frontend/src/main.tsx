@@ -12,6 +12,7 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import EquipmentList from './pages/equipment/EquipmentList'
 import EquipmentDetail from './pages/equipment/EquipmentDetail'
 import EquipmentForm from './pages/equipment/EquipmentForm'
+import FieldConfigPage from './pages/equipment/FieldConfigPage'
 import InspectionTaskCenter from './pages/inspection/InspectionTaskCenter'
 import InspectionDetail from './pages/inspection/InspectionDetail'
 import InspectionReview from './pages/inspection/InspectionReview'
@@ -52,6 +53,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="equipment" element={<EquipmentList />} />
             <Route path="equipment/new" element={<EquipmentForm />} />
+            <Route path="equipment/field-configs" element={<FieldConfigPage />} />
             <Route path="equipment/:id" element={<EquipmentDetail />} />
             <Route path="equipment/:id/edit" element={<EquipmentForm />} />
             <Route path="inspection" element={<InspectionTaskCenter />} />
