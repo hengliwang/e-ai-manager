@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from models.equipment import Equipment, EquipmentPhoto, AuditLog, FieldConfig
+from models.inspection_task import InspectionTask, TaskPhoto, TaskDefect
+from models.defect_order import DefectOrder
 from schemas.equipment import EquipmentCreate, EquipmentUpdate, FieldConfigCreate, FieldConfigUpdate
 
 
@@ -59,9 +61,42 @@ def update_equipment(db: Session, equipment_id: int, data: EquipmentUpdate, user
 
 def delete_equipment(db: Session, equipment_id: int):
     equipment = db.query(Equipment).filter(Equipment.id == equipment_id).first()
-    if equipment:
-        db.delete(equipment)
-        db.commit()
+    if not equipment:
+        return None
+
+    # 级联删除：找到该设备的所有巡检任务
+    task_ids = db.query(InspectionTask.id).filter(InspectionTask.equipment_id == equipment_id).all()
+    task_id_list = [t[0] for t in task_ids]
+
+    if task_id_list:
+        # 删除消缺工单（关联到任务缺陷）
+        db.query(DefectOrder).filter(
+            DefectOrder.task_defect_id.in_(
+                db.query(TaskDefect.id).filter(TaskDefect.task_id.in_(task_id_list))
+            )
+        ).delete(synchronize_session=False)
+
+        # 删除任务缺陷
+        db.query(TaskDefect).filter(TaskDefect.task_id.in_(task_id_list)).delete(synchronize_session=False)
+
+        # 删除任务照片
+        db.query(TaskPhoto).filter(TaskPhoto.task_id.in_(task_id_list)).delete(synchronize_session=False)
+
+        # 删除巡检任务
+        db.query(InspectionTask).filter(InspectionTask.equipment_id == equipment_id).delete(synchronize_session=False)
+
+    # 删除直接关联到该设备的消缺工单
+    db.query(DefectOrder).filter(DefectOrder.equipment_id == equipment_id).delete(synchronize_session=False)
+
+    # 删除审计日志
+    db.query(AuditLog).filter(AuditLog.equipment_id == equipment_id).delete(synchronize_session=False)
+
+    # 删除设备照片
+    db.query(EquipmentPhoto).filter(EquipmentPhoto.equipment_id == equipment_id).delete(synchronize_session=False)
+
+    # 删除设备
+    db.delete(equipment)
+    db.commit()
     return equipment
 
 

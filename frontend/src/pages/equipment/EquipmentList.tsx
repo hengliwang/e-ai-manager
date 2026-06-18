@@ -27,9 +27,13 @@ export default function EquipmentList() {
   useEffect(() => { fetchData(); }, []);
 
   const handleDelete = async (id: number) => {
-    await equipmentApi.delete(id);
-    message.success('删除成功');
-    fetchData();
+    try {
+      await equipmentApi.delete(id);
+      message.success('删除成功');
+      fetchData();
+    } catch {
+      message.error('删除失败，设备可能存在关联数据');
+    }
   };
 
   const columns = [
