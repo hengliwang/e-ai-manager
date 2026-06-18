@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Upload } from 'antd';
-import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
+import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Image } from 'antd';
+import { ArrowLeftOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { equipmentApi, type FieldConfig, type FieldOption } from '../../api/equipment';
 import dayjs from 'dayjs';
 import type { Rule } from 'antd/es/form';
-import type { UploadFile, RcFile } from 'antd/es/upload';
 
 type FieldValue = any;
 
@@ -17,8 +16,7 @@ export default function EquipmentForm() {
   const [submitting, setSubmitting] = useState(false);
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
   const [configsLoading, setConfigsLoading] = useState(true);
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadFile[]>>({});
-  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [mediaFiles, setMediaFiles] = useState<Record<string, { urls: string[]; uploading: boolean }>>({});
   const navigate = useNavigate();
 
   // 加载字段配置
@@ -62,6 +60,15 @@ export default function EquipmentForm() {
             });
           }
           form.setFieldsValue(formValues);
+          // 加载已有图片/视频到预览状态
+          const media: Record<string, { urls: string[]; uploading: boolean }> = {};
+          for (const cfg of fieldConfigs) {
+            if ((cfg.field_type === 'image' || cfg.field_type === 'video') && formValues[cfg.field_name]) {
+              const urls = String(formValues[cfg.field_name]).split(',').filter(Boolean);
+              if (urls.length > 0) media[cfg.field_name] = { urls, uploading: false };
+            }
+          }
+          setMediaFiles(media);
           setLoading(false);
         })
         .catch(() => setLoading(false));
@@ -221,57 +228,70 @@ export default function EquipmentForm() {
 
       case 'video':
       case 'image': {
-        const isVideo = config.field_type === 'video';
-        const accept = isVideo ? 'video/*,image/*' : 'image/*';
-        const fileList = uploadedFiles[config.field_name] || [];
+        const fieldName = config.field_name;
+        const files = mediaFiles[fieldName] || { urls: [], uploading: false };
 
-        const customUpload = async (options: any) => {
-          const { file, onSuccess, onError } = options;
-          setUploading((prev) => ({ ...prev, [config.field_name]: true }));
+        const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setMediaFiles((prev) => ({ ...prev, [fieldName]: { ...files, uploading: true } }));
           try {
-            const res = await equipmentApi.uploadFile(file as RcFile);
-            const filePath = res.data.file_path;
-            form.setFieldValue(config.field_name, filePath);
-            setUploadedFiles((prev) => ({
-              ...prev,
-              [config.field_name]: [{ uid: file.uid, name: file.name, status: 'done', url: filePath }],
-            }));
-            onSuccess(res.data, file);
+            const res = await equipmentApi.uploadFile(file);
+            const newUrl = res.data.file_path;
+            const newUrls = [...files.urls, newUrl];
+            setMediaFiles((prev) => ({ ...prev, [fieldName]: { urls: newUrls, uploading: false } }));
+            form.setFieldValue(fieldName, newUrls.join(','));
             message.success(`${file.name} 上传成功`);
           } catch {
-            onError(new Error('上传失败'));
+            setMediaFiles((prev) => ({ ...prev, [fieldName]: { ...files, uploading: false } }));
             message.error('文件上传失败');
-          } finally {
-            setUploading((prev) => ({ ...prev, [config.field_name]: false }));
           }
+          // Reset input so same file can be selected again
+          e.target.value = '';
+        };
+
+        const removeFile = (idx: number) => {
+          const newUrls = files.urls.filter((_, i) => i !== idx);
+          setMediaFiles((prev) => ({ ...prev, [fieldName]: { ...files, urls: newUrls } }));
+          form.setFieldValue(fieldName, newUrls.length ? newUrls.join(',') : undefined);
         };
 
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={fieldName} label={config.field_label} name={fieldName} rules={rules}>
             <div>
-              <Upload
-                accept={accept}
-                maxCount={3}
-                fileList={fileList}
-                customRequest={customUpload}
-                listType="picture-card"
-                onRemove={() => {
-                  setUploadedFiles((prev) => ({ ...prev, [config.field_name]: [] }));
-                  form.setFieldValue(config.field_name, undefined);
-                }}
-                onChange={(info) => {
-                  setUploadedFiles((prev) => ({ ...prev, [config.field_name]: info.fileList }));
-                }}
-              >
-                {fileList.length < 3 && (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>
-                      {uploading[config.field_name] ? '上传中...' : isVideo ? '图片/视频' : '照片'}
-                    </div>
+              {/* Hidden file input */}
+              <input
+                type="file"
+                id={`upload-${fieldName}`}
+                accept={config.field_type === 'video' ? 'video/*,image/*' : 'image/*'}
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+              />
+              {/* Thumbnail previews */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                {files.urls.map((url, idx) => (
+                  <div key={idx} style={{ position: 'relative', width: 104, height: 104, border: '1px solid #d9d9d9', borderRadius: 8, overflow: 'hidden' }}>
+                    <Image src={url} width={102} height={102} style={{ objectFit: 'cover' }} preview={{ mask: '预览' }} />
+                    <Button
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      style={{ position: 'absolute', top: 0, right: 0, borderRadius: '0 8px 0 8px' }}
+                      onClick={() => removeFile(idx)}
+                    />
                   </div>
-                )}
-              </Upload>
+                ))}
+              </div>
+              {/* Upload button */}
+              <Button
+                icon={<UploadOutlined />}
+                loading={files.uploading}
+                onClick={() => document.getElementById(`upload-${fieldName}`)?.click()}
+                disabled={files.urls.length >= 3}
+              >
+                {files.uploading ? '上传中...' : `选择${config.field_type === 'video' ? '图片/视频' : '照片'}`}
+                {files.urls.length > 0 && ` (${files.urls.length}/3)`}
+              </Button>
             </div>
           </Form.Item>
         );
@@ -290,23 +310,39 @@ export default function EquipmentForm() {
     }
   };
 
+  // Equipment 表的核心列名
+  const coreColumns = new Set([
+    'category', 'equipment_type', 'equipment_name', 'asset_code', 'cabinet_model',
+    'factory_number', 'line_name', 'station_name', 'operation_date', 'manufacturer',
+    'province', 'city', 'district', 'street', 'address_detail', 'longitude',
+    'latitude', 'customer_name', 'remark',
+  ]);
+
   const onFinish = async (values: Record<string, FieldValue>) => {
     setSubmitting(true);
     const data: Record<string, FieldValue> = {};
+    const extraFields: Record<string, FieldValue> = {};
     for (const cfg of fieldConfigs) {
       const val = values[cfg.field_name];
       if (val === undefined) continue;
+      let finalVal = val;
       if (cfg.field_type === 'date' && val) {
-        data[cfg.field_name] = dayjs.isDayjs(val)
+        finalVal = dayjs.isDayjs(val)
           ? cfg.date_format === 'month'
             ? val.format('YYYY-MM')
             : val.format('YYYY-MM-DD')
           : val;
       } else if (cfg.field_type === 'multi_select' && Array.isArray(val)) {
-        data[cfg.field_name] = val;
-      } else {
-        data[cfg.field_name] = val;
+        finalVal = val;
       }
+      if (coreColumns.has(cfg.field_name)) {
+        data[cfg.field_name] = finalVal;
+      } else {
+        extraFields[cfg.field_name] = finalVal;
+      }
+    }
+    if (Object.keys(extraFields).length > 0) {
+      data['extra_fields'] = extraFields;
     }
     try {
       if (isEdit) {
@@ -339,7 +375,7 @@ export default function EquipmentForm() {
         </Space>
       </div>
       <Card>
-        <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 800 }} onValuesChange={() => form.validateFields()}>
+        <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 800 }}>
           {fieldConfigs.sort((a, b) => a.sort_order - b.sort_order).map(renderField)}
           <Form.Item>
             <Space>
