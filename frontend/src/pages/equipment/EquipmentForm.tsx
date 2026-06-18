@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Image } from 'antd';
-import { ArrowLeftOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, UploadOutlined, DeleteOutlined, AimOutlined } from '@ant-design/icons';
 import { equipmentApi, type FieldConfig, type FieldOption } from '../../api/equipment';
 import dayjs from 'dayjs';
 import type { Rule } from 'antd/es/form';
@@ -17,7 +17,36 @@ export default function EquipmentForm() {
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
   const [configsLoading, setConfigsLoading] = useState(true);
   const [mediaFiles, setMediaFiles] = useState<Record<string, { urls: string[]; uploading: boolean }>>({});
+  const [geoLoading, setGeoLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 从浏览器获取当前位置，自动填写经纬度
+  const handleGetGeoLocation = () => {
+    if (!navigator.geolocation) {
+      message.error('当前浏览器不支持地理位置定位');
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        form.setFieldsValue({
+          longitude: String(pos.coords.longitude),
+          latitude: String(pos.coords.latitude),
+        });
+        setGeoLoading(false);
+        message.success('已获取当前位置');
+      },
+      (err) => {
+        setGeoLoading(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          message.error('定位权限被拒绝，请在浏览器设置中允许定位');
+        } else {
+          message.error('获取位置失败，请手动输入');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   // 加载字段配置
   useEffect(() => {
@@ -302,6 +331,12 @@ export default function EquipmentForm() {
           <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
             {config.max_length && config.max_length > 200 ? (
               <Input.TextArea rows={3} maxLength={config.max_length} showCount placeholder={`请输入${config.field_label}`} />
+            ) : config.field_name === 'longitude' ? (
+              <Input
+                placeholder="点击右侧按钮自动获取"
+                suffix={<AimOutlined style={{ color: geoLoading ? '#1a7a3a' : '#999', cursor: 'pointer' }} onClick={handleGetGeoLocation} />}
+                readOnly
+              />
             ) : (
               <Input placeholder={`请输入${config.field_label}`} maxLength={config.max_length || undefined} showCount={!!config.max_length} />
             )}
