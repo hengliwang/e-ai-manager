@@ -81,5 +81,4 @@ echo "   ✅  前端 PID: $FRONTEND_PID，日志: $LOG_DIR/frontend.log"
 echo ""
 echo "🎉  所有服务已启动！"
 echo "查看后端日志：tail -f $LOG_DIR/backend.log"
-echo "查看前端日志：tail -f $LOG_DIR/frontend.log"
-                                                                                                                             1,11          Top
+echo "查看前端日志：tail -f $LOG_DIR/frontend.log"                                                                                                                           1,11          To
