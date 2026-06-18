@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Upload } from 'antd';
-import { ArrowLeftOutlined, UploadOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { equipmentApi, type FieldConfig, type FieldOption } from '../../api/equipment';
 import dayjs from 'dayjs';
 import type { Rule } from 'antd/es/form';
+import type { UploadFile, RcFile } from 'antd/es/upload';
 
 type FieldValue = any;
 
@@ -16,6 +17,8 @@ export default function EquipmentForm() {
   const [submitting, setSubmitting] = useState(false);
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
   const [configsLoading, setConfigsLoading] = useState(true);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadFile[]>>({});
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
 
   // 加载字段配置
@@ -217,25 +220,62 @@ export default function EquipmentForm() {
         );
 
       case 'video':
-      case 'image':
+      case 'image': {
+        const isVideo = config.field_type === 'video';
+        const accept = isVideo ? 'video/*,image/*' : 'image/*';
+        const fileList = uploadedFiles[config.field_name] || [];
+
+        const customUpload = async (options: any) => {
+          const { file, onSuccess, onError } = options;
+          setUploading((prev) => ({ ...prev, [config.field_name]: true }));
+          try {
+            const res = await equipmentApi.uploadFile(file as RcFile);
+            const filePath = res.data.file_path;
+            form.setFieldValue(config.field_name, filePath);
+            setUploadedFiles((prev) => ({
+              ...prev,
+              [config.field_name]: [{ uid: file.uid, name: file.name, status: 'done', url: filePath }],
+            }));
+            onSuccess(res.data, file);
+            message.success(`${file.name} 上传成功`);
+          } catch {
+            onError(new Error('上传失败'));
+            message.error('文件上传失败');
+          } finally {
+            setUploading((prev) => ({ ...prev, [config.field_name]: false }));
+          }
+        };
+
         return (
           <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
-            <Upload
-              accept={config.field_type === 'video' ? 'video/*,image/*' : 'image/*'}
-              maxCount={1}
-              beforeUpload={() => false}
-              onChange={(info) => {
-                if (info.fileList.length > 0) {
-                  form.setFieldValue(config.field_name, info.fileList[0].name);
-                }
-              }}
-            >
-              <Button icon={<UploadOutlined />}>
-                上传{config.field_type === 'video' ? '图片/视频' : '图片'}
-              </Button>
-            </Upload>
+            <div>
+              <Upload
+                accept={accept}
+                maxCount={3}
+                fileList={fileList}
+                customRequest={customUpload}
+                listType="picture-card"
+                onRemove={() => {
+                  setUploadedFiles((prev) => ({ ...prev, [config.field_name]: [] }));
+                  form.setFieldValue(config.field_name, undefined);
+                }}
+                onChange={(info) => {
+                  setUploadedFiles((prev) => ({ ...prev, [config.field_name]: info.fileList }));
+                }}
+              >
+                {fileList.length < 3 && (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>
+                      {uploading[config.field_name] ? '上传中...' : isVideo ? '图片/视频' : '照片'}
+                    </div>
+                  </div>
+                )}
+              </Upload>
+            </div>
           </Form.Item>
         );
+      }
 
       default:
         return (
