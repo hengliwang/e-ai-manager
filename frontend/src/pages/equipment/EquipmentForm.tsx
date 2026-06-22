@@ -101,7 +101,10 @@ export default function EquipmentForm() {
           setMediaFiles(media);
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch((err) => {
+          console.error('加载设备数据失败:', err);
+          setLoading(false);
+        });
     }
   }, [id, fieldConfigs]);
 
@@ -112,6 +115,9 @@ export default function EquipmentForm() {
         return (config.options || []).filter((o) => o.active !== false);
       }
       const rule = config.cascade_rules[0];
+      if (!rule?.mapping) {
+        return (config.options || []).filter((o) => o.active !== false);
+      }
       const parentValue = form.getFieldValue(rule.field);
       if (!parentValue || !rule.mapping[parentValue]) {
         return (config.options || []).filter((o) => o.active !== false);
@@ -413,7 +419,14 @@ export default function EquipmentForm() {
       </div>
       <Card>
         <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 800 }}>
-          {fieldConfigs.sort((a, b) => a.sort_order - b.sort_order).map(renderField)}
+          {[...fieldConfigs].sort((a, b) => a.sort_order - b.sort_order).map((cfg) => {
+            try {
+              return renderField(cfg);
+            } catch (e) {
+              console.error(`渲染字段 ${cfg.field_name} 失败:`, e);
+              return null;
+            }
+          })}
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={submitting}>
