@@ -226,7 +226,7 @@ export default function EquipmentForm() {
     switch (config.field_type) {
       case 'select':
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={config.field_name} rules={rules}>
             <Select
               placeholder={`请选择${config.field_label}`}
               options={getCascadedOptions(config).map((o) => ({
@@ -241,7 +241,7 @@ export default function EquipmentForm() {
 
       case 'multi_select':
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={config.field_name} rules={rules}>
             <Select
               mode="multiple"
               placeholder={`请选择${config.field_label}`}
@@ -254,7 +254,7 @@ export default function EquipmentForm() {
 
       case 'number':
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={config.field_name} rules={rules}>
             <InputNumber
               style={{ width: '100%' }}
               placeholder={`请输入${config.field_label}`}
@@ -267,7 +267,7 @@ export default function EquipmentForm() {
 
       case 'date':
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={config.field_name} rules={rules}>
             <DatePicker
               style={{ width: '100%' }}
               locale={locale}
@@ -309,7 +309,7 @@ export default function EquipmentForm() {
         };
 
         return (
-          <Form.Item key={fieldName} label={config.field_label} name={fieldName} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={fieldName} rules={rules}>
             <div>
               {/* Hidden file input */}
               <input
@@ -351,7 +351,7 @@ export default function EquipmentForm() {
 
       default:
         return (
-          <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
+          <Form.Item key={config.id} label={config.field_label} name={config.field_name} rules={rules}>
             {config.max_length && config.max_length > 200 ? (
               <Input.TextArea rows={3} maxLength={config.max_length} showCount placeholder={`请输入${config.field_label}`} />
             ) : config.field_name === 'longitude' ? (
