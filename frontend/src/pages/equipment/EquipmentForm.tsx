@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Image } from 'antd';
+import locale from 'antd/es/date-picker/locale/zh_CN';
 import { ArrowLeftOutlined, UploadOutlined, DeleteOutlined, AimOutlined } from '@ant-design/icons';
 import { equipmentApi, type FieldConfig, type FieldOption } from '../../api/equipment';
 import dayjs from 'dayjs';
@@ -248,6 +249,7 @@ export default function EquipmentForm() {
           <Form.Item key={config.field_name} label={config.field_label} name={config.field_name} rules={rules}>
             <DatePicker
               style={{ width: '100%' }}
+              locale={locale}
               picker={config.date_format === 'month' ? 'month' : undefined}
               format={config.date_format === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD'}
               placeholder={`请选择${config.field_label}`}
