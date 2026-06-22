@@ -15,11 +15,11 @@ export default function EquipmentForm() {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
-  const [initialValues, setInitialValues] = useState<Record<string, FieldValue>>({});
   const [ready, setReady] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<Record<string, { urls: string[]; uploading: boolean }>>({});
   const [geoLoading, setGeoLoading] = useState(false);
   const dataLoadedRef = useRef(false);
+  const editValuesRef = useRef<Record<string, FieldValue> | null>(null);
   const navigate = useNavigate();
 
   // 从浏览器获取当前位置，自动填写经纬度
@@ -88,7 +88,7 @@ export default function EquipmentForm() {
             }
           }
           setFieldConfigs(configs);
-          setInitialValues(formValues);
+          editValuesRef.current = formValues;
           setMediaFiles(media);
           setReady(true);
         })
@@ -109,6 +109,14 @@ export default function EquipmentForm() {
         });
     }
   }, []);
+
+  // 表单挂载后回填编辑数据
+  useEffect(() => {
+    if (ready && editValuesRef.current) {
+      form.setFieldsValue(editValuesRef.current);
+      editValuesRef.current = null;
+    }
+  }, [ready, form]);
 
   // 级联: 根据父字段值筛选子字段选项
   const getCascadedOptions = useCallback(
@@ -425,7 +433,7 @@ export default function EquipmentForm() {
         </Space>
       </div>
       <Card>
-        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={initialValues} style={{ maxWidth: 800 }}>
+        <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 800 }}>
           {[...fieldConfigs].sort((a, b) => a.sort_order - b.sort_order).map((cfg) => {
             try {
               return renderField(cfg);
