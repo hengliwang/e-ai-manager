@@ -82,7 +82,10 @@ def create_field_config_handler(
 ):
     if current_user.role.value not in ["admin"]:
         raise HTTPException(status_code=403, detail="仅管理员可管理字段配置")
-    return create_field_config(db, data)
+    try:
+        return create_field_config(db, data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put("/field-configs/{config_id}", response_model=FieldConfigResponse)
@@ -94,7 +97,10 @@ def update_field_config_handler(
 ):
     if current_user.role.value not in ["admin"]:
         raise HTTPException(status_code=403, detail="仅管理员可管理字段配置")
-    config = update_field_config(db, config_id, data)
+    try:
+        config = update_field_config(db, config_id, data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not config:
         raise HTTPException(status_code=404, detail="字段配置不存在")
     return config

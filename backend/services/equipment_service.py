@@ -117,6 +117,10 @@ def get_field_config(db: Session, config_id: int):
 
 
 def create_field_config(db: Session, data: FieldConfigCreate):
+    # 检查 field_name 是否已存在
+    existing = db.query(FieldConfig).filter(FieldConfig.field_name == data.field_name).first()
+    if existing:
+        raise ValueError(f"字段名 '{data.field_name}' 已存在")
     config = FieldConfig(**data.model_dump())
     db.add(config)
     db.commit()
@@ -128,6 +132,14 @@ def update_field_config(db: Session, config_id: int, data: FieldConfigUpdate):
     config = db.query(FieldConfig).filter(FieldConfig.id == config_id).first()
     if not config:
         return None
+    # 如果修改了 field_name，检查是否与其他记录冲突
+    if data.field_name and data.field_name != config.field_name:
+        dup = db.query(FieldConfig).filter(
+            FieldConfig.field_name == data.field_name,
+            FieldConfig.id != config_id
+        ).first()
+        if dup:
+            raise ValueError(f"字段名 '{data.field_name}' 已被使用")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(config, key, value)
     db.commit()

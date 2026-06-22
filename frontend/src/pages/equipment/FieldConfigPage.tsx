@@ -67,8 +67,9 @@ export default function FieldConfigPage() {
       }
       setModalOpen(false);
       fetchConfigs();
-    } catch {
-      message.error('保存失败');
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || '保存失败';
+      message.error(msg);
     }
   };
 
