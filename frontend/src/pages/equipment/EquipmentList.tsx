@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Card, Input, Select, Button, Space, Tag, Popconfirm, message } from 'antd';
 import { PlusOutlined, ExportOutlined, UploadOutlined, SearchOutlined } from '@ant-design/icons';
@@ -12,6 +12,8 @@ export default function EquipmentList() {
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState<string | undefined>();
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const fetchData = (p = page, kw = keyword, cat = category) => {
@@ -33,6 +35,43 @@ export default function EquipmentList() {
       fetchData();
     } catch {
       message.error('删除失败，设备可能存在关联数据');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const res = await equipmentApi.export();
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '设备档案.xlsx';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      message.success('导出成功');
+    } catch {
+      message.error('导出失败');
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const res = await equipmentApi.import(file);
+      const data = res.data as { success: number; total: number; errors: string[] };
+      if (data.errors?.length) {
+        message.warning(`导入完成: ${data.success}/${data.total} 条成功，${data.errors.length} 条失败`);
+      } else {
+        message.success(`成功导入 ${data.success} 条设备`);
+      }
+      fetchData();
+    } catch {
+      message.error('导入失败，请检查文件格式');
+    } finally {
+      setImporting(false);
+      e.target.value = '';
     }
   };
 
@@ -102,8 +141,15 @@ export default function EquipmentList() {
             </Button>
           </Space>
           <Space>
-            <Button icon={<UploadOutlined />}>批量导入</Button>
-            <Button icon={<ExportOutlined />}>导出Excel</Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+              onChange={handleImportFile}
+            />
+            <Button icon={<UploadOutlined />} loading={importing} onClick={() => fileInputRef.current?.click()}>批量导入</Button>
+            <Button icon={<ExportOutlined />} onClick={handleExport}>导出Excel</Button>
             <Button onClick={() => navigate('/equipment/field-configs')}>基础属性配置</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/equipment/new')}>
               新增设备

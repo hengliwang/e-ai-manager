@@ -96,4 +96,14 @@ export const equipmentApi = {
     request.delete(`/api/equipment/field-configs/${id}`),
   manageOptions: (configId: number, data: { action: string; option?: FieldOption; old_value?: string }) =>
     request.post(`/api/equipment/field-configs/${configId}/options`, data),
+
+  // 导入导出
+  export: () => request.get('/api/equipment/export', { responseType: 'blob' }),
+  import: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request.post('/api/equipment/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };

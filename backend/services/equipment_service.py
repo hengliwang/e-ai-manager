@@ -3,6 +3,9 @@ from models.equipment import Equipment, EquipmentPhoto, AuditLog, FieldConfig
 from models.inspection_task import InspectionTask, TaskPhoto, TaskDefect
 from models.defect_order import DefectOrder
 from schemas.equipment import EquipmentCreate, EquipmentUpdate, FieldConfigCreate, FieldConfigUpdate
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 
 
 def get_equipment_list(db: Session, skip: int = 0, limit: int = 20,
@@ -172,3 +175,125 @@ def manage_field_options(db: Session, config_id: int, action: str, option: dict 
     db.commit()
     db.refresh(config)
     return config
+
+
+# ===== 导入导出 =====
+
+EQUIPMENT_CORE_FIELDS = [
+    "category", "equipment_type", "asset_code", "equipment_name",
+    "cabinet_model", "factory_number", "line_name", "station_name",
+    "operation_date", "manufacturer", "province", "city", "district",
+    "street", "address_detail", "longitude", "latitude",
+    "customer_name", "remark",
+]
+
+
+def export_equipment_excel(db: Session) -> io.BytesIO:
+    """导出全部设备到 Excel"""
+    configs = get_field_configs(db)
+    equipment_list = db.query(Equipment).order_by(Equipment.updated_at.desc()).all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "设备档案"
+
+    # 表头样式
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center")
+
+    # 构建列: 所有激活的字段配置
+    active_configs = [c for c in configs if c.is_active == "active"]
+    headers = [c.field_label for c in active_configs]
+    field_names = [c.field_name for c in active_configs]
+
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+
+    # 数据行
+    for row_idx, equip in enumerate(equipment_list, 2):
+        for col_idx, field_name in enumerate(field_names, 1):
+            val = getattr(equip, field_name, None)
+            if val is None and equip.extra_fields:
+                val = equip.extra_fields.get(field_name, "")
+            if val is None:
+                val = ""
+            elif isinstance(val, list):
+                val = ", ".join(str(v) for v in val)
+            ws.cell(row=row_idx, column=col_idx, value=str(val) if val != "" else "")
+
+    # 自动列宽
+    for col_idx in range(1, len(headers) + 1):
+        max_width = len(str(headers[col_idx - 1])) * 2 + 4
+        for row_idx in range(2, min(len(equipment_list) + 2, 100)):
+            cell_val = ws.cell(row=row_idx, column=col_idx).value
+            if cell_val:
+                # 中文字符算2个宽度
+                width = sum(2 if ord(c) > 127 else 1 for c in str(cell_val))
+                max_width = max(max_width, width)
+        ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = min(max_width + 2, 40)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+
+
+def import_equipment_excel(db: Session, file_bytes: bytes, user_id: int) -> dict:
+    """从 Excel 批量导入设备"""
+    wb = Workbook()
+    # openpyxl 从 bytes 加载
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(file_bytes))
+    ws = wb.active
+
+    # 读取表头行
+    headers = []
+    for cell in ws[1]:
+        if cell.value:
+            headers.append(str(cell.value).strip())
+
+    # 建立 label → field_name 映射
+    configs = get_field_configs(db, include_disabled=True)
+    label_to_field = {c.field_label: c.field_name for c in configs}
+
+    success = 0
+    errors = []
+
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), 2):
+        if not any(row):
+            continue
+
+        data = {}
+        extra_fields = {}
+        for col_idx, header in enumerate(headers):
+            val = row[col_idx] if col_idx < len(row) else None
+            if val is None:
+                continue
+            val_str = str(val).strip()
+            if not val_str:
+                continue
+
+            field_name = label_to_field.get(header, header)
+            if field_name in EQUIPMENT_CORE_FIELDS:
+                data[field_name] = val_str
+            else:
+                extra_fields[field_name] = val_str
+
+        if not data.get("equipment_name") or not data.get("category") or not data.get("equipment_type"):
+            errors.append(f"第{row_idx}行: 缺少必填字段(设备名称/设备大类/设备类型)")
+            continue
+
+        if extra_fields:
+            data["extra_fields"] = extra_fields
+
+        try:
+            create_equipment(db, EquipmentCreate(**data), user_id)
+            success += 1
+        except Exception as e:
+            errors.append(f"第{row_idx}行: {str(e)}")
+
+    return {"success": success, "total": success + len(errors), "errors": errors}

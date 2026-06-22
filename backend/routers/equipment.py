@@ -9,10 +9,11 @@ from schemas.equipment import (
 from services.equipment_service import (
     get_equipment_list, get_equipment, create_equipment, update_equipment,
     delete_equipment, get_field_configs, create_field_config, update_field_config,
-    delete_field_config, manage_field_options
+    delete_field_config, manage_field_options, export_equipment_excel, import_equipment_excel
 )
 from middleware.auth_middleware import get_current_user
 from models.user import User
+from fastapi.responses import StreamingResponse
 import os
 import shutil
 from config import PHOTO_DIR
@@ -127,6 +128,35 @@ def manage_options_handler(
     if not config:
         raise HTTPException(status_code=404, detail="字段配置不存在或无选项")
     return config
+
+
+# ----- 导入导出 -----
+
+@router.get("/export")
+def export_equipment(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    output = export_equipment_excel(db)
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=equipment_export.xlsx"}
+    )
+
+
+@router.post("/import")
+async def import_equipment(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    ext = file.filename.split(".")[-1].lower() if file.filename else ""
+    if ext not in ("xlsx", "xls"):
+        raise HTTPException(status_code=400, detail="请上传 .xlsx 或 .xls 格式的文件")
+    contents = await file.read()
+    result = import_equipment_excel(db, contents, current_user.id)
+    return result
 
 
 # ===== 参数路由 (/{equipment_id} 必须在静态路由之后) =====
