@@ -7,6 +7,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import './styles/global.css'
 import MainLayout from './components/Layout/MainLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/login/LoginPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import EquipmentList from './pages/equipment/EquipmentList'
@@ -52,10 +53,10 @@ createRoot(document.getElementById('root')!).render(
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="equipment" element={<EquipmentList />} />
-            <Route path="equipment/new" element={<EquipmentForm />} />
-            <Route path="equipment/field-configs" element={<FieldConfigPage />} />
-            <Route path="equipment/:id" element={<EquipmentDetail />} />
-            <Route path="equipment/:id/edit" element={<EquipmentForm />} />
+            <Route path="equipment/new" element={<ErrorBoundary><EquipmentForm /></ErrorBoundary>} />
+            <Route path="equipment/field-configs" element={<ErrorBoundary><FieldConfigPage /></ErrorBoundary>} />
+            <Route path="equipment/:id" element={<ErrorBoundary><EquipmentDetail /></ErrorBoundary>} />
+            <Route path="equipment/:id/edit" element={<ErrorBoundary><EquipmentForm /></ErrorBoundary>} />
             <Route path="inspection" element={<InspectionTaskCenter />} />
             <Route path="inspection/:id" element={<InspectionDetail />} />
             <Route path="inspection/:id/review" element={<InspectionReview />} />

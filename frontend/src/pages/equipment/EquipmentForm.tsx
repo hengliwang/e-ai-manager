@@ -65,48 +65,47 @@ export default function EquipmentForm() {
 
   // 加载编辑数据
   useEffect(() => {
-    if (isEdit && id && fieldConfigs.length > 0) {
-      setLoading(true);
-      equipmentApi
-        .get(Number(id))
-        .then((res) => {
-          const data = res.data;
-          const formValues: Record<string, FieldValue> = {};
-          for (const cfg of fieldConfigs) {
-            const val = data[cfg.field_name];
-            if (val !== undefined && val !== null) {
-              if (cfg.field_type === 'date') {
-                formValues[cfg.field_name] = val ? dayjs(val) : undefined;
-              } else if (cfg.field_type === 'multi_select') {
-                formValues[cfg.field_name] = Array.isArray(val) ? val : [val];
-              } else {
-                formValues[cfg.field_name] = val;
-              }
+    if (!isEdit || !id || configsLoading) return;
+    setLoading(true);
+    equipmentApi
+      .get(Number(id))
+      .then((res) => {
+        const data = res.data;
+        const formValues: Record<string, FieldValue> = {};
+        for (const cfg of fieldConfigs) {
+          const val = data[cfg.field_name];
+          if (val !== undefined && val !== null) {
+            if (cfg.field_type === 'date') {
+              formValues[cfg.field_name] = val ? dayjs(val) : undefined;
+            } else if (cfg.field_type === 'multi_select') {
+              formValues[cfg.field_name] = Array.isArray(val) ? val : [val];
+            } else {
+              formValues[cfg.field_name] = val;
             }
           }
-          if (data.extra_fields) {
-            Object.entries(data.extra_fields).forEach(([k, v]) => {
-              formValues[k] = v;
-            });
+        }
+        if (data.extra_fields) {
+          Object.entries(data.extra_fields).forEach(([k, v]) => {
+            formValues[k] = v;
+          });
+        }
+        form.setFieldsValue(formValues);
+        // 加载已有图片/视频到预览状态
+        const media: Record<string, { urls: string[]; uploading: boolean }> = {};
+        for (const cfg of fieldConfigs) {
+          if ((cfg.field_type === 'image' || cfg.field_type === 'video') && formValues[cfg.field_name]) {
+            const urls = String(formValues[cfg.field_name]).split(',').filter(Boolean);
+            if (urls.length > 0) media[cfg.field_name] = { urls, uploading: false };
           }
-          form.setFieldsValue(formValues);
-          // 加载已有图片/视频到预览状态
-          const media: Record<string, { urls: string[]; uploading: boolean }> = {};
-          for (const cfg of fieldConfigs) {
-            if ((cfg.field_type === 'image' || cfg.field_type === 'video') && formValues[cfg.field_name]) {
-              const urls = String(formValues[cfg.field_name]).split(',').filter(Boolean);
-              if (urls.length > 0) media[cfg.field_name] = { urls, uploading: false };
-            }
-          }
-          setMediaFiles(media);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error('加载设备数据失败:', err);
-          setLoading(false);
-        });
-    }
-  }, [id, fieldConfigs]);
+        }
+        setMediaFiles(media);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('加载设备数据失败:', err);
+        setLoading(false);
+      });
+  }, [id, configsLoading]);
 
   // 级联: 根据父字段值筛选子字段选项
   const getCascadedOptions = useCallback(
@@ -181,7 +180,7 @@ export default function EquipmentForm() {
       if (required) {
         rules.push({ required: true, message: `请输入${config.field_label}` });
       }
-      if (config.field_type === 'number' && config.min_value !== undefined) {
+      if (config.field_type === 'number' && config.min_value != null) {
         rules.push({
           type: 'number',
           min: config.min_value,
@@ -190,10 +189,15 @@ export default function EquipmentForm() {
         });
       }
       if (config.field_type === 'text' && config.regex_pattern) {
-        rules.push({
-          pattern: new RegExp(config.regex_pattern),
-          message: config.regex_hint || `${config.field_label}格式不正确`,
-        });
+        try {
+          const regex = new RegExp(config.regex_pattern);
+          rules.push({
+            pattern: regex,
+            message: config.regex_hint || `${config.field_label}格式不正确`,
+          });
+        } catch {
+          // 无效正则，跳过
+        }
       }
       if (config.max_length && config.max_length <= 200) {
         rules.push({ max: config.max_length, message: `最多${config.max_length}个字符` });
