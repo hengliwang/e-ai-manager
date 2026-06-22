@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Form, Input, InputNumber, Select, DatePicker, Button, Space, message, Spin, Image } from 'antd';
 import locale from 'antd/es/date-picker/locale/zh_CN';
@@ -13,12 +13,13 @@ export default function EquipmentForm() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
-  const [configsLoading, setConfigsLoading] = useState(true);
+  const [initialValues, setInitialValues] = useState<Record<string, FieldValue>>({});
+  const [ready, setReady] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<Record<string, { urls: string[]; uploading: boolean }>>({});
   const [geoLoading, setGeoLoading] = useState(false);
+  const dataLoadedRef = useRef(false);
   const navigate = useNavigate();
 
   // 从浏览器获取当前位置，自动填写经纬度
@@ -49,63 +50,65 @@ export default function EquipmentForm() {
     );
   };
 
-  // 加载字段配置
+  // 并行加载字段配置（和编辑数据）
   useEffect(() => {
-    equipmentApi
-      .getFieldConfigs()
-      .then((res) => {
-        setFieldConfigs(res.data || []);
-        setConfigsLoading(false);
-      })
-      .catch(() => {
-        message.error('字段配置加载失败');
-        setConfigsLoading(false);
-      });
-  }, []);
+    if (dataLoadedRef.current) return;
+    dataLoadedRef.current = true;
 
-  // 加载编辑数据
-  useEffect(() => {
-    if (!isEdit || !id || configsLoading) return;
-    setLoading(true);
-    equipmentApi
-      .get(Number(id))
-      .then((res) => {
-        const data = res.data;
-        const formValues: Record<string, FieldValue> = {};
-        for (const cfg of fieldConfigs) {
-          const val = data[cfg.field_name];
-          if (val !== undefined && val !== null) {
-            if (cfg.field_type === 'date') {
-              formValues[cfg.field_name] = val ? dayjs(val) : undefined;
-            } else if (cfg.field_type === 'multi_select') {
-              formValues[cfg.field_name] = Array.isArray(val) ? val : [val];
-            } else {
-              formValues[cfg.field_name] = val;
+    const loadConfigs = equipmentApi.getFieldConfigs().then((res) => res.data || []);
+
+    if (isEdit && id) {
+      Promise.all([loadConfigs, equipmentApi.get(Number(id))])
+        .then(([configs, equipRes]) => {
+          const data = equipRes.data;
+          const formValues: Record<string, FieldValue> = {};
+          for (const cfg of configs) {
+            const val = data[cfg.field_name];
+            if (val !== undefined && val !== null) {
+              if (cfg.field_type === 'date') {
+                formValues[cfg.field_name] = val ? dayjs(val) : undefined;
+              } else if (cfg.field_type === 'multi_select') {
+                formValues[cfg.field_name] = Array.isArray(val) ? val : [val];
+              } else {
+                formValues[cfg.field_name] = val;
+              }
             }
           }
-        }
-        if (data.extra_fields) {
-          Object.entries(data.extra_fields).forEach(([k, v]) => {
-            formValues[k] = v;
-          });
-        }
-        form.setFieldsValue(formValues);
-        // 加载已有图片/视频到预览状态
-        const media: Record<string, { urls: string[]; uploading: boolean }> = {};
-        for (const cfg of fieldConfigs) {
-          if ((cfg.field_type === 'image' || cfg.field_type === 'video') && formValues[cfg.field_name]) {
-            const urls = String(formValues[cfg.field_name]).split(',').filter(Boolean);
-            if (urls.length > 0) media[cfg.field_name] = { urls, uploading: false };
+          if (data.extra_fields) {
+            Object.entries(data.extra_fields).forEach(([k, v]) => {
+              formValues[k] = v;
+            });
           }
-        }
-        setMediaFiles(media);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('加载设备数据失败:', err);
-        setLoading(false);
-      });
-  }, [id, configsLoading]);
+          // 加载已有图片/视频到预览状态
+          const media: Record<string, { urls: string[]; uploading: boolean }> = {};
+          for (const cfg of configs) {
+            if ((cfg.field_type === 'image' || cfg.field_type === 'video') && formValues[cfg.field_name]) {
+              const urls = String(formValues[cfg.field_name]).split(',').filter(Boolean);
+              if (urls.length > 0) media[cfg.field_name] = { urls, uploading: false };
+            }
+          }
+          setFieldConfigs(configs);
+          setInitialValues(formValues);
+          setMediaFiles(media);
+          setReady(true);
+        })
+        .catch((err) => {
+          console.error('加载编辑数据失败:', err);
+          dataLoadedRef.current = false;
+          setReady(true);
+        });
+    } else {
+      loadConfigs
+        .then((configs) => {
+          setFieldConfigs(configs);
+          setReady(true);
+        })
+        .catch(() => {
+          message.error('字段配置加载失败');
+          setReady(true);
+        });
+    }
+  }, []);
 
   // 级联: 根据父字段值筛选子字段选项
   const getCascadedOptions = useCallback(
@@ -407,7 +410,7 @@ export default function EquipmentForm() {
     }
   };
 
-  if (configsLoading || loading) {
+  if (!ready) {
     return <Spin size="large" style={{ display: 'block', margin: '200px auto' }} />;
   }
 
@@ -422,7 +425,7 @@ export default function EquipmentForm() {
         </Space>
       </div>
       <Card>
-        <Form form={form} layout="vertical" onFinish={onFinish} style={{ maxWidth: 800 }}>
+        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={initialValues} style={{ maxWidth: 800 }}>
           {[...fieldConfigs].sort((a, b) => a.sort_order - b.sort_order).map((cfg) => {
             try {
               return renderField(cfg);
