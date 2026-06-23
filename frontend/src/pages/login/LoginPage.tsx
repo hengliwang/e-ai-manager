@@ -26,7 +26,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-left">
         <div style={{ fontSize: 80, marginBottom: 24 }}>⚡</div>
-        <h1>电网智能巡检管理平台</h1>
+        <h1>公司智能平台</h1>
         <p>端云协同 · 数据驱动 · 安全可控</p>
         <div style={{ marginTop: 48, opacity: 0.7, fontSize: 14 }}>
           <div>✓ 标准化设备档案与数据采集</div>

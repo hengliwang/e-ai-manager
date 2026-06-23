@@ -67,7 +67,7 @@ export default function MainLayout() {
           borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}>
           <Typography.Title level={4} style={{ color: '#fff', margin: 0, fontSize: collapsed ? 14 : 18 }}>
-            {collapsed ? '⚡' : '电网智能巡检平台'}
+            {collapsed ? '⚡' : '公司智能平台'}
           </Typography.Title>
         </div>
         <Menu
