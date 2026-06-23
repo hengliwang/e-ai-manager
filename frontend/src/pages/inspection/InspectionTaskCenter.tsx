@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, Tag, Select, Input, Tabs, message, Modal, Form, DatePicker } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Select, Tabs, message, Modal, Form, DatePicker } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { inspectionApi } from '../../api/inspection';
 import { equipmentApi } from '../../api/equipment';
-import dayjs from 'dayjs';
 
 const statusTabs = [
   { key: '', label: '全部' },

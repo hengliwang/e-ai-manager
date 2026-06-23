@@ -6,7 +6,6 @@ import {
   ToolOutlined,
   ScheduleOutlined,
   AlertOutlined,
-  SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   BellOutlined,

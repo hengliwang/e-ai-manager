@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Tag, Button, Space, Spin, Timeline, Image } from 'antd';
+import { Card, Descriptions, Tag, Button, Space, Spin } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { inspectionApi } from '../../api/inspection';
-import dayjs from 'dayjs';
 
 const statusMap: Record<string, { color: string; text: string }> = {
   pending: { color: 'blue', text: '待巡检' },

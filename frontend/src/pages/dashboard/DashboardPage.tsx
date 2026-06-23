@@ -9,7 +9,6 @@ import {
 import ReactECharts from 'echarts-for-react';
 import { dashboardApi } from '../../api/defect';
 import { inspectionApi } from '../../api/inspection';
-import dayjs from 'dayjs';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>({});
@@ -63,7 +62,7 @@ export default function DashboardPage() {
     {
       title: '优先级', dataIndex: 'priority', key: 'priority', width: 80,
       render: (p: number) => {
-        const map: Record<number, { color: string; text: string }> = { 1: 'red', 2: 'orange', 3: 'default' };
+        const map: Record<number, string> = { 1: 'red', 2: 'orange', 3: 'default' };
         const texts: Record<number, string> = { 1: '危急', 2: '严重', 3: '一般' };
         return <Tag color={map[p] || 'default'}>{texts[p] || p}</Tag>;
       },

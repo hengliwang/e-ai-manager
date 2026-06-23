@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Descriptions, Tag, Button, Space, Spin, message, Input, Modal } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { inspectionApi } from '../../api/inspection';
-import dayjs from 'dayjs';
 
 export default function InspectionReview() {
   const { id } = useParams<{ id: string }>();

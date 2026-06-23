@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Tabs, Tag, Button, Space, Spin, Table, Timeline, Image } from 'antd';
+import { Card, Descriptions, Tabs, Tag, Button, Space, Spin, Table, Timeline } from 'antd';
 import { EditOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { equipmentApi, type EquipmentData } from '../../api/equipment';
 import { inspectionApi } from '../../api/inspection';

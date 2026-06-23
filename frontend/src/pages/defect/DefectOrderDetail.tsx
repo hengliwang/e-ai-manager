@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Tag, Button, Space, Spin, message, Select } from 'antd';
+import { Card, Descriptions, Tag, Button, Space, Spin, message } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { defectApi } from '../../api/defect';
 import dayjs from 'dayjs';
