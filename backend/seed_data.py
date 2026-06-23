@@ -97,59 +97,62 @@ def init_db():
                     max_length=100,
                     visibility_rules=[{"field": "equipment_type", "value": "站房,开关柜", "action": "show", "operator": "in"}],
                     sort_order=10),
-        # 11. 电压等级 - 数值输入 (带上下限&精度)
+        # 11. 省 - 文本输入 (地址-级联)
+        FieldConfig(field_name="province", field_label="省", field_type="text", is_required="always",
+                    max_length=50, sort_order=11),
+        # 12. 市 - 文本输入
+        FieldConfig(field_name="city", field_label="市", field_type="text", is_required="always",
+                    max_length=50, sort_order=12),
+        # 13. 区 - 文本输入
+        FieldConfig(field_name="district", field_label="区", field_type="text", is_required="always",
+                    max_length=50, sort_order=13),
+        # 14. 街道 - 文本输入
+        FieldConfig(field_name="street", field_label="街道", field_type="text", is_required="always",
+                    max_length=100, sort_order=14),
+        # 15. 详细地址 - 文本输入
+        FieldConfig(field_name="address_detail", field_label="详细地址", field_type="text", is_required="always",
+                    max_length=255, sort_order=15),
+        # 16. 经度 - GPS定位
+        FieldConfig(field_name="longitude", field_label="经度", field_type="number", is_required="always",
+                    min_value=73, max_value=135, decimal_places=6, sort_order=16),
+        # 17. 纬度 - GPS定位
+        FieldConfig(field_name="latitude", field_label="纬度", field_type="number", is_required="always",
+                    min_value=17, max_value=54, decimal_places=6, sort_order=17),
+        # 18. 所属客户 - 文本输入
+        FieldConfig(field_name="customer_name", field_label="所属客户", field_type="text", is_required="always",
+                    max_length=100, sort_order=18),
+        # 19. 现场照片 - 图片集 (需求文档: 土建类需全景+杆号/标识, 电器类需全景+铭牌+仪表读数)
+        FieldConfig(field_name="site_photos", field_label="现场照片", field_type="image", is_required="always",
+                    sort_order=19),
+        # 20. 备注 - 多行文本 (最大500字符)
+        FieldConfig(field_name="remark", field_label="备注", field_type="text", is_required="optional",
+                    max_length=500, sort_order=20),
+        # === 扩展字段 (非需求文档核心字段) ===
+        # 21. 电压等级 - 数值输入
         FieldConfig(field_name="voltage_level", field_label="电压等级(kV)", field_type="number", is_required="optional",
                     min_value=0.1, max_value=1000, decimal_places=2,
                     visibility_rules=[{"field": "equipment_type", "value": "变压器,开关柜,架空线路,断路器", "action": "show", "operator": "in"}],
-                    sort_order=11),
-        # 12. 杆塔高度 - 数值输入
+                    sort_order=21),
+        # 22. 杆塔高度 - 数值输入
         FieldConfig(field_name="tower_height", field_label="杆塔高度(m)", field_type="number", is_required="optional",
                     min_value=0, max_value=200, decimal_places=1,
                     visibility_rules=[{"field": "equipment_type", "value": "电线杆,架空线路", "action": "show", "operator": "in"}],
-                    sort_order=12),
-        # 13. 缺陷等级 - 多选下拉框
+                    sort_order=22),
+        # 23. 缺陷等级 - 多选下拉框
         FieldConfig(field_name="defect_level", field_label="缺陷等级", field_type="multi_select", is_required="optional",
                     options=[
                         {"label": "一级", "value": "一级", "active": True},
                         {"label": "二级", "value": "二级", "active": True},
                         {"label": "三级", "value": "三级", "active": True},
                         {"label": "四级", "value": "四级", "active": True},
-                    ], sort_order=13),
-        # 14. 所属客户 - 文本输入
-        FieldConfig(field_name="customer_name", field_label="所属客户", field_type="text", is_required="always",
-                    max_length=100, sort_order=14),
-        # 15. 现场实景 - 多媒体 (图片/视频)
-        FieldConfig(field_name="site_media", field_label="现场实景", field_type="video", is_required="optional",
-                    sort_order=15,
-                    visibility_rules=[{"field": "category", "value": "电器类", "action": "show"}]),
-        # 16. 竣工日期 - 日期选择 (仅年月)
+                    ], sort_order=23),
+        # 24. 竣工日期 - 日期选择 (仅年月)
         FieldConfig(field_name="completion_date", field_label="竣工日期", field_type="date", is_required="optional",
-                    date_format="month", sort_order=16),
-        # 17. 联系人手机 - 文本输入 + 正则校验
+                    date_format="month", sort_order=24),
+        # 25. 联系人手机 - 文本输入 + 正则校验
         FieldConfig(field_name="contact_phone", field_label="联系人手机", field_type="text", is_required="optional",
                     regex_pattern=r"^1[3-9]\d{9}$", regex_hint="请输入正确的11位手机号",
-                    max_length=11, sort_order=17),
-        # 18. 省 - 文本输入 (必填)
-        FieldConfig(field_name="province", field_label="省", field_type="text", is_required="always",
-                    max_length=50, sort_order=18),
-        # 19. 市 - 文本输入 (必填)
-        FieldConfig(field_name="city", field_label="市", field_type="text", is_required="always",
-                    max_length=50, sort_order=19),
-        # 20. 区 - 文本输入 (必填)
-        FieldConfig(field_name="district", field_label="区", field_type="text", is_required="always",
-                    max_length=50, sort_order=20),
-        # 21. 详细地址 - 文本输入
-        FieldConfig(field_name="address_detail", field_label="详细地址", field_type="text", is_required="optional",
-                    max_length=255, sort_order=21),
-        # 22. 经度 - 数值输入
-        FieldConfig(field_name="longitude", field_label="经度", field_type="number", is_required="optional",
-                    min_value=73, max_value=135, decimal_places=6, sort_order=22),
-        # 23. 纬度 - 数值输入
-        FieldConfig(field_name="latitude", field_label="纬度", field_type="number", is_required="optional",
-                    min_value=17, max_value=54, decimal_places=6, sort_order=23),
-        # 24. 备注 - 文本输入
-        FieldConfig(field_name="remark", field_label="备注", field_type="text", is_required="optional",
-                    max_length=500, sort_order=24),
+                    max_length=11, sort_order=25),
     ]
     db.add_all(field_configs)
     db.flush()
@@ -160,29 +163,47 @@ def init_db():
                   manufacturer="特变电工", operation_date="2020-03-15",
                   province="江苏省", city="苏州市", district="吴中区", street="长桥街道",
                   address_detail="苏蠡路88号", longitude="120.632", latitude="31.262",
-                  customer_name="国网苏州供电公司", remark="重点设备", created_by=1, photo_count=3),
+                  customer_name="苏州供电公司", remark="重点设备", created_by=1, photo_count=3),
         Equipment(category="电器类", equipment_type="开关柜", asset_code="SGCC-002", equipment_name="吴中变10kV高压柜",
                   cabinet_model="KYN28-12", factory_number="F2020001",
                   manufacturer="正泰电器", operation_date="2021-06-20",
                   province="江苏省", city="苏州市", district="吴中区", street="长桥街道",
                   address_detail="苏蠡路88号", longitude="120.632", latitude="31.262",
-                  customer_name="国网苏州供电公司", created_by=1, photo_count=4),
+                  customer_name="苏州供电公司", created_by=1, photo_count=4),
         Equipment(category="土建类", equipment_type="电线杆", equipment_name="吴中线#001杆",
                   line_name="吴中线", province="江苏省", city="苏州市", district="吴中区", street="木渎镇",
                   address_detail="金山路100号", longitude="120.518", latitude="31.272",
-                  customer_name="国网苏州供电公司", remark="老旧电杆，需重点巡视", created_by=1, photo_count=2),
+                  customer_name="苏州供电公司", remark="老旧电杆，需重点巡视", created_by=1, photo_count=2),
         Equipment(category="土建类", equipment_type="电缆井", equipment_name="木渎站#003井",
                   station_name="木渎变电站", province="江苏省", city="苏州市", district="吴中区", street="木渎镇",
                   address_detail="竹园路200号", longitude="120.520", latitude="31.275",
-                  customer_name="国网苏州供电公司", created_by=1, photo_count=2),
+                  customer_name="苏州供电公司", created_by=1, photo_count=2),
         Equipment(category="电器类", equipment_type="架空线路", equipment_name="木渎-胥口联络线",
                   line_name="木渎-胥口联络线", province="江苏省", city="苏州市", district="吴中区", street="胥口镇",
                   address_detail="孙武路300号", longitude="120.495", latitude="31.240",
-                  customer_name="国网苏州供电公司", created_by=2, photo_count=5),
+                  customer_name="苏州供电公司", created_by=2, photo_count=5),
         Equipment(category="土建类", equipment_type="电线杆", equipment_name="姑苏线#005杆",
                   line_name="姑苏线", province="江苏省", city="苏州市", district="姑苏区", street="观前街道",
                   address_detail="人民路500号", longitude="120.618", latitude="31.304",
-                  customer_name="国网苏州供电公司", created_by=2, photo_count=2),
+                  customer_name="苏州供电公司", created_by=2, photo_count=2),
+        Equipment(category="电器类", equipment_type="断路器", asset_code="SGCC-003", equipment_name="胥口变#1断路器",
+                  manufacturer="ABB电气", operation_date="2022-01-10",
+                  province="江苏省", city="苏州市", district="吴中区", street="胥口镇",
+                  address_detail="孙武路300号", longitude="120.495", latitude="31.241",
+                  customer_name="苏州供电公司", created_by=1, photo_count=3),
+        Equipment(category="土建类", equipment_type="站房", equipment_name="木渎站10kV配电房",
+                  station_name="木渎变电站", province="江苏省", city="苏州市", district="吴中区", street="木渎镇",
+                  address_detail="竹园路201号", longitude="120.521", latitude="31.274",
+                  customer_name="苏州供电公司", created_by=1, photo_count=4),
+        Equipment(category="土建类", equipment_type="沟道", equipment_name="胥口线#001沟道",
+                  province="江苏省", city="苏州市", district="吴中区", street="胥口镇",
+                  address_detail="环城路50号", longitude="120.493", latitude="31.238",
+                  customer_name="苏州供电公司", remark="需定期清理", created_by=2, photo_count=2),
+        Equipment(category="电器类", equipment_type="变压器", asset_code="SGCC-004", equipment_name="姑苏变#2主变",
+                  manufacturer="特变电工", operation_date="2019-08-25",
+                  province="江苏省", city="苏州市", district="姑苏区", street="观前街道",
+                  address_detail="人民路501号", longitude="120.619", latitude="31.303",
+                  customer_name="苏州供电公司", remark="重点设备", created_by=1, photo_count=3),
     ]
     db.add_all(equipment_list)
     db.flush()
@@ -193,32 +214,32 @@ def init_db():
                        status=TaskStatus.PENDING, equipment_id=1, inspector_id=3,
                        inspection_date="2026-06-17", priority=2,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
-                       customer_name="国网苏州供电公司", created_by=2),
+                       customer_name="苏州供电公司", created_by=2),
         InspectionTask(task_no="INSP20260616002", inspection_type=InspectionType.SPECIAL,
                        status=TaskStatus.PENDING, equipment_id=3, inspector_id=3,
                        inspection_date="2026-06-17", priority=1,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
-                       customer_name="国网苏州供电公司", created_by=2),
+                       customer_name="苏州供电公司", created_by=2),
         InspectionTask(task_no="INSP20260616003", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.IN_PROGRESS, equipment_id=2, inspector_id=4,
                        inspection_date="2026-06-16", priority=2,
                        location_province="江苏省", location_city="苏州市", location_district="姑苏区",
-                       customer_name="国网苏州供电公司", created_by=2),
+                       customer_name="苏州供电公司", created_by=2),
         InspectionTask(task_no="INSP20260616004", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.SUBMITTED, equipment_id=4, inspector_id=3,
                        inspection_date="2026-06-15", priority=3,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
-                       customer_name="国网苏州供电公司", created_by=2),
+                       customer_name="苏州供电公司", created_by=2),
         InspectionTask(task_no="INSP20260616005", inspection_type=InspectionType.FULL_LINE,
                        status=TaskStatus.COMPLETED, equipment_id=5, inspector_id=4, reviewer_id=2,
                        inspection_date="2026-06-10", priority=2,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
-                       customer_name="国网苏州供电公司", created_by=2),
+                       customer_name="苏州供电公司", created_by=2),
         InspectionTask(task_no="INSP20260616006", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.SUSPENDED, equipment_id=6, inspector_id=4,
                        inspection_date="2026-06-16", priority=2,
                        location_province="江苏省", location_city="苏州市", location_district="姑苏区",
-                       customer_name="国网苏州供电公司", suspend_reason="暴雨天气，暂停巡检", created_by=2),
+                       customer_name="苏州供电公司", suspend_reason="暴雨天气，暂停巡检", created_by=2),
     ]
     db.add_all(tasks)
 
