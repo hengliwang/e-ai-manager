@@ -29,6 +29,12 @@ class DefectSource(str, enum.Enum):
     REMOVED = "removed"
 
 
+class AuditStatus(str, enum.Enum):
+    PENDING = "pending"
+    REVIEWED = "reviewed"
+    REJECTED = "rejected"
+
+
 class InspectionTask(Base):
     """巡检任务"""
     __tablename__ = "inspection_tasks"
@@ -37,25 +43,33 @@ class InspectionTask(Base):
     task_no = Column(String(50), unique=True, nullable=False, index=True)
     inspection_type = Column(SQLEnum(InspectionType), default=InspectionType.PERIODIC)
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.PENDING, index=True)
+    audit_status = Column(SQLEnum(AuditStatus))  # 审核状态
     equipment_id = Column(Integer, ForeignKey("equipment.id"), nullable=False)
     inspector_id = Column(Integer, ForeignKey("users.id"))
     reviewer_id = Column(Integer, ForeignKey("users.id"))
     inspection_date = Column(String(20))
+    line_name = Column(String(100))  # 线路名称
+    station_name = Column(String(100))  # 站所名称
     location_province = Column(String(50))
     location_city = Column(String(50))
     location_district = Column(String(50))
     location_street = Column(String(100))
+    address_detail = Column(String(255))
     longitude = Column(String(30))
     latitude = Column(String(30))
     customer_name = Column(String(200))
     priority = Column(Integer, default=2)  # 1=危急, 2=严重, 3=一般
     suspend_reason = Column(Text)
+    resume_reason = Column(Text)
+    resume_material = Column(String(500))  # 解除挂起佐证材料
+    resume_expected_time = Column(String(20))  # 预计执行时间
     cancel_reason = Column(Text)
     reject_reason = Column(Text)
     started_at = Column(DateTime)
     submitted_at = Column(DateTime)
     completed_at = Column(DateTime)
     cancelled_at = Column(DateTime)
+    version = Column(Integer, default=1, nullable=False)  # 乐观锁版本号
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -103,6 +117,7 @@ class TaskDefect(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     task = relationship("InspectionTask", back_populates="defects")
+    photo = relationship("TaskPhoto", foreign_keys="TaskDefect.photo_id")
     defect_order = relationship("DefectOrder", back_populates="task_defect", uselist=False)
 
 

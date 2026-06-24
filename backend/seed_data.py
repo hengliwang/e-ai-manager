@@ -1,7 +1,7 @@
 from database import SessionLocal, engine, Base
 from models.user import User, UserRole, AccountType
 from models.equipment import FieldConfig, Equipment, EquipmentPhoto
-from models.inspection_task import InspectionTask, InspectionType, TaskStatus, InspectionStrategy
+from models.inspection_task import InspectionTask, InspectionType, TaskStatus, InspectionStrategy, AuditStatus
 from models.defect_order import DefectOrder, DefectOrderStatus
 from services.auth_service import hash_password
 from datetime import datetime
@@ -210,35 +210,59 @@ def init_db():
 
     # ===== 巡检任务 =====
     tasks = [
+        # 1. 吴中变#1主变 (变压器, pending)
         InspectionTask(task_no="INSP20260616001", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.PENDING, equipment_id=1, inspector_id=3,
                        inspection_date="2026-06-17", priority=2,
+                       line_name=None, station_name=None,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
+                       location_street="长桥街道", address_detail="苏蠡路88号",
+                       longitude="120.632", latitude="31.262",
                        customer_name="苏州供电公司", created_by=2),
+        # 2. 吴中线#001杆 (电线杆, pending, 危急)
         InspectionTask(task_no="INSP20260616002", inspection_type=InspectionType.SPECIAL,
                        status=TaskStatus.PENDING, equipment_id=3, inspector_id=3,
                        inspection_date="2026-06-17", priority=1,
+                       line_name="吴中线", station_name=None,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
+                       location_street="木渎镇", address_detail="金山路100号",
+                       longitude="120.518", latitude="31.272",
                        customer_name="苏州供电公司", created_by=2),
+        # 3. 吴中变10kV高压柜 (开关柜, in_progress)
         InspectionTask(task_no="INSP20260616003", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.IN_PROGRESS, equipment_id=2, inspector_id=4,
                        inspection_date="2026-06-16", priority=2,
+                       line_name=None, station_name=None,
                        location_province="江苏省", location_city="苏州市", location_district="姑苏区",
+                       location_street="长桥街道", address_detail="苏蠡路88号",
+                       longitude="120.632", latitude="31.262",
                        customer_name="苏州供电公司", created_by=2),
+        # 4. 木渎站#003井 (电缆井, submitted)
         InspectionTask(task_no="INSP20260616004", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.SUBMITTED, equipment_id=4, inspector_id=3,
                        inspection_date="2026-06-15", priority=3,
+                       line_name=None, station_name="木渎变电站",
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
+                       location_street="木渎镇", address_detail="竹园路200号",
+                       longitude="120.520", latitude="31.275",
                        customer_name="苏州供电公司", created_by=2),
+        # 5. 木渎-胥口联络线 (架空线路, completed)
         InspectionTask(task_no="INSP20260616005", inspection_type=InspectionType.FULL_LINE,
                        status=TaskStatus.COMPLETED, equipment_id=5, inspector_id=4, reviewer_id=2,
                        inspection_date="2026-06-10", priority=2,
+                       line_name="木渎-胥口联络线", station_name=None,
                        location_province="江苏省", location_city="苏州市", location_district="吴中区",
+                       location_street="胥口镇", address_detail="孙武路300号",
+                       longitude="120.495", latitude="31.240",
                        customer_name="苏州供电公司", created_by=2),
+        # 6. 姑苏线#005杆 (电线杆, suspended)
         InspectionTask(task_no="INSP20260616006", inspection_type=InspectionType.PERIODIC,
                        status=TaskStatus.SUSPENDED, equipment_id=6, inspector_id=4,
                        inspection_date="2026-06-16", priority=2,
+                       line_name="姑苏线", station_name=None,
                        location_province="江苏省", location_city="苏州市", location_district="姑苏区",
+                       location_street="观前街道", address_detail="人民路500号",
+                       longitude="120.618", latitude="31.304",
                        customer_name="苏州供电公司", suspend_reason="暴雨天气，暂停巡检", created_by=2),
     ]
     db.add_all(tasks)
