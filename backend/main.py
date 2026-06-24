@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from config import CORS_ORIGINS, PHOTO_DIR
-from routers import auth, equipment, inspection_task, defect_order, dashboard
+from routers import auth, equipment, inspection_task, defect_order, dashboard, user
 from seed_data import init_db
 
 app = FastAPI(title="电网智能巡检管理平台", version="1.0.0")
@@ -25,6 +25,7 @@ app.include_router(equipment.router)
 app.include_router(inspection_task.router)
 app.include_router(defect_order.router)
 app.include_router(dashboard.router)
+app.include_router(user.router)
 
 
 @app.on_event("startup")

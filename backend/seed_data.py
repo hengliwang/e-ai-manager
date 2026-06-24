@@ -1,5 +1,5 @@
 from database import SessionLocal, engine, Base
-from models.user import User, UserRole
+from models.user import User, UserRole, AccountType
 from models.equipment import FieldConfig, Equipment, EquipmentPhoto
 from models.inspection_task import InspectionTask, InspectionType, TaskStatus, InspectionStrategy
 from models.defect_order import DefectOrder, DefectOrderStatus
@@ -18,11 +18,11 @@ def init_db():
 
     # ===== 用户 =====
     users = [
-        User(username="admin", password=hash_password("admin123"), real_name="系统管理员", role=UserRole.ADMIN, phone="13800000001", department="技术部", region="苏州市"),
-        User(username="wangwei", password=hash_password("123456"), real_name="王伟", role=UserRole.MANAGER, phone="13800000002", department="运维部", region="吴中区"),
-        User(username="zhangming", password=hash_password("123456"), real_name="张明", role=UserRole.INSPECTOR, phone="13800000003", department="巡检一班", region="吴中区"),
-        User(username="lixin", password=hash_password("123456"), real_name="李新", role=UserRole.INSPECTOR, phone="13800000004", department="巡检二班", region="姑苏区"),
-        User(username="zhaoqiang", password=hash_password("123456"), real_name="赵强", role=UserRole.REPAIRER, phone="13800000005", department="检修一班", region="吴中区"),
+        User(username="admin", password=hash_password("admin123"), real_name="系统管理员", role=UserRole.ADMIN, employee_id="E001", phone="13800000001", account_type=AccountType.EMPLOYEE, department="技术部", region="苏州市"),
+        User(username="wangwei", password=hash_password("123456"), real_name="王伟", role=UserRole.MANAGER, employee_id="E002", phone="13800000002", account_type=AccountType.EMPLOYEE, department="运维部", region="吴中区"),
+        User(username="zhangming", password=hash_password("123456"), real_name="张明", role=UserRole.INSPECTOR, employee_id="E003", phone="13800000003", account_type=AccountType.EMPLOYEE, department="巡检一班", region="吴中区"),
+        User(username="lixin", password=hash_password("123456"), real_name="李新", role=UserRole.INSPECTOR, employee_id="E004", phone="13800000004", account_type=AccountType.EMPLOYEE, department="巡检二班", region="姑苏区"),
+        User(username="zhaoqiang", password=hash_password("123456"), real_name="赵强", role=UserRole.REPAIRER, employee_id="E005", phone="13800000005", account_type=AccountType.EMPLOYEE, department="检修一班", region="吴中区"),
     ]
     db.add_all(users)
     db.flush()

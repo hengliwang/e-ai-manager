@@ -11,23 +11,35 @@ import {
   BellOutlined,
   LogoutOutlined,
   UserOutlined,
+  SettingOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 
 const { Header, Sider, Content } = Layout;
 
-const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: '数据看板' },
-  { key: '/equipment', icon: <ToolOutlined />, label: '设备档案管理' },
-  { key: '/inspection', icon: <ScheduleOutlined />, label: '巡检任务管理' },
-  { key: '/defect', icon: <AlertOutlined />, label: '消缺工单管理' },
-];
-
 export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, canManageUsers } = useAuthStore();
+
+  const menuItems = [
+    { key: '/dashboard', icon: <DashboardOutlined />, label: '数据看板' },
+    { key: '/equipment', icon: <ToolOutlined />, label: '设备档案管理' },
+    { key: '/inspection', icon: <ScheduleOutlined />, label: '巡检任务管理' },
+    { key: '/defect', icon: <AlertOutlined />, label: '消缺工单管理' },
+    ...(canManageUsers ? [
+      {
+        key: '/settings',
+        icon: <SettingOutlined />,
+        label: '系统设置',
+        children: [
+          { key: '/users', icon: <TeamOutlined />, label: '用户管理' },
+        ],
+      },
+    ] : []),
+  ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
@@ -45,7 +57,10 @@ export default function MainLayout() {
     ],
   };
 
-  const selectedKey = '/' + location.pathname.split('/')[1];
+  const pathParts = location.pathname.split('/');
+  const selectedKey = '/' + pathParts[1];
+  // users 是 settings 的子路由
+  const openKeys = (selectedKey === '/users') ? ['/settings'] : undefined;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -74,6 +89,7 @@ export default function MainLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
+          defaultOpenKeys={openKeys}
           items={menuItems}
           onClick={handleMenuClick}
           style={{

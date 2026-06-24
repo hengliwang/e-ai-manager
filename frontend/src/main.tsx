@@ -19,6 +19,7 @@ import InspectionDetail from './pages/inspection/InspectionDetail'
 import InspectionReview from './pages/inspection/InspectionReview'
 import DefectOrderList from './pages/defect/DefectOrderList'
 import DefectOrderDetail from './pages/defect/DefectOrderDetail'
+import UserManagement from './pages/users/UserManagement'
 import { useAuthStore } from './store/authStore'
 
 dayjs.locale('zh-cn')
@@ -43,6 +44,12 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const canManageUsers = useAuthStore((s) => s.canManageUsers)
+  if (!canManageUsers) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider locale={zhCN} theme={theme}>
@@ -62,6 +69,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="inspection/:id/review" element={<InspectionReview />} />
             <Route path="defect" element={<DefectOrderList />} />
             <Route path="defect/:id" element={<DefectOrderDetail />} />
+            <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>

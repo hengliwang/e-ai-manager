@@ -11,8 +11,8 @@ from services.equipment_service import (
     delete_equipment, get_field_configs, create_field_config, update_field_config,
     delete_field_config, manage_field_options, export_equipment_excel, import_equipment_excel
 )
-from middleware.auth_middleware import get_current_user
-from models.user import User
+from middleware.auth_middleware import get_current_user, require_role
+from models.user import User, UserRole
 from fastapi.responses import StreamingResponse
 import os
 import shutil

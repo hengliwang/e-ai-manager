@@ -12,6 +12,12 @@ class UserRole(str, enum.Enum):
     REPAIRER = "repairer"
 
 
+class AccountType(str, enum.Enum):
+    EMPLOYEE = "employee"
+    CUSTOMER = "customer"
+    REGULATOR = "regulator"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -20,7 +26,9 @@ class User(Base):
     password = Column(String(255), nullable=False)
     real_name = Column(String(50), nullable=False)
     role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.INSPECTOR)
+    employee_id = Column(String(50), unique=True)
     phone = Column(String(20))
+    account_type = Column(SQLEnum(AccountType), nullable=False, default=AccountType.EMPLOYEE)
     department = Column(String(100))
     region = Column(String(100))
     is_active = Column(Boolean, default=True)
